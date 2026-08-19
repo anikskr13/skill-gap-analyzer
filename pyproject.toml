@@ -1,0 +1,25 @@
+[project]
+name = "skill-gap-analyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "anikskr13", email = "anik982kna@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "groq>=1.6.0",
+    "openai>=3.3.0",
+    "pdfplumber>=0.11.10",
+    "pydantic>=2.13.4",
+    "pypd>=1.1.0",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.2.3",
+]
+
+[project.scripts]
+skill-gap-analyzer = "skill_gap_analyzer:main"
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"

@@ -1,0 +1,21 @@
+Michael Carter
+
+Education:
+Bachelor of Science in Information Technology
+
+Skills:
+Java, JavaScript, React, MySQL, Git, Docker
+
+Experience:
+3 years of experience as a Software Developer.
+
+Projects:
+E-Commerce Platform
+Developed a web-based e-commerce application using Java, React, and MySQL. Implemented authentication, product management, and order processing.
+
+Task Management Application
+Built a task management application with React and JavaScript. Added user authentication and task filtering.
+
+Certifications:
+AWS Certified Cloud Practitioner
+Oracle Certified Professional Java Programmer

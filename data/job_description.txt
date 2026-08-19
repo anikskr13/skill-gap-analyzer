@@ -1,0 +1,21 @@
+Senior Backend Engineer
+
+We are looking for a Senior Backend Engineer to join our engineering team.
+
+Required Skills:
+Java, Spring Boot, PostgreSQL, REST APIs, Docker, Git
+
+Preferred Skills:
+AWS, Kubernetes, Redis, Kafka
+
+Experience:
+Minimum 4 years of backend development experience.
+
+Responsibilities:
+Design and develop scalable backend services.
+Build RESTful APIs using Java and Spring Boot.
+Design and optimize PostgreSQL databases.
+Develop and maintain microservices.
+Deploy applications using Docker and cloud platforms.
+Collaborate with frontend engineers and DevOps teams.
+Write unit and integration tests.
