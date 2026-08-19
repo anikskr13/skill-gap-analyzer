@@ -1,10 +1,20 @@
+# =================================================================
+# IMPORTS
+# =================================================================
+
 from extractor import CandidateProfile, RoleRequirements
 from pydantic import BaseModel
+
+
+# =================================================================
+# PYDANTIC MODELS
+# =================================================================
 
 class SkillGap(BaseModel):
     skill_name: str
     priority: str       # "Critical" | "Important" | "Nice-to-have"
     reason: str         # why this priority was assigned
+
 
 class GapReport(BaseModel):
     candidate_name: str | None
@@ -13,6 +23,11 @@ class GapReport(BaseModel):
     gaps: list[SkillGap]
     experience_gap: str | None
     verdict: str
+
+
+# =================================================================
+# PRIORITY RANKING — deterministic Python logic, no LLM
+# =================================================================
 
 def assign_priority(skill: str, required_skills: list[str], preferred_skills: list[str], jd_text: str) -> str:
     skill_lower = skill.lower()
@@ -31,6 +46,11 @@ def assign_priority(skill: str, required_skills: list[str], preferred_skills: li
     else:
         return "Nice-to-have"
 
+
+# =================================================================
+# EXPERIENCE GAP CHECK
+# =================================================================
+
 def check_experience_gap(candidate: CandidateProfile, role: RoleRequirements) -> str | None:
     if candidate.experience_years is None or role.min_experience is None:
         return None
@@ -42,6 +62,11 @@ def check_experience_gap(candidate: CandidateProfile, role: RoleRequirements) ->
     else:
         return f"You have {candidate.experience_years} yr(s). Role needs {role.min_experience} yr(s). Gap: {gap} yr(s)."
 
+
+# =================================================================
+# VERDICT GENERATION
+# =================================================================
+
 def generate_verdict(matched_skills: list[str], gaps: list[SkillGap]) -> str:
     if len(gaps) == 0:
         return "Strong fit — no skill gaps found."
@@ -52,6 +77,11 @@ def generate_verdict(matched_skills: list[str], gaps: list[SkillGap]) -> str:
         return "Good fit — only minor gaps."
     else:
         return f"Partial fit — missing {critical_count} critical skill(s)."
+
+
+# =================================================================
+# MAIN COMPARISON — ties everything together
+# =================================================================
 
 def compare(candidate: CandidateProfile, role: RoleRequirements, jd_text: str) -> GapReport:
 

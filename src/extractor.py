@@ -1,25 +1,51 @@
+# =================================================================
+# IMPORTS AND ENVIRONMENT
+# =================================================================
+
 import os
 import json
-from pydantic import BaseModel,Field
+from pydantic import BaseModel, Field
 from groq import Groq
+from openai import OpenAI  # Used for local LLM support (LM Studio / Ollama)
 from dotenv import load_dotenv
 from pathlib import Path
 
-#========== Groq client api key connection =====================#
 load_dotenv()
 my_api_key = os.getenv("GROQ_API_KEY")
 if not my_api_key:
-    raise ValueError("GROQ_API_KEY is missing")
-
-client = Groq(api_key=my_api_key)
-groq_model="openai/gpt-oss-120b"
-#========== Groq client api key connection =====================#
+    raise ValueError("GROQ_API_KEY is missing — add it to your .env file")
 
 
-#============= FETCH RESUME AND JD =========================#
-## Documents Readers
+# =================================================================
+# LLM CLIENT CONFIGURATION
+# =================================================================
+
+# --- Groq (cloud) ---
+client_groq = Groq(api_key=my_api_key)
+groq_model = "openai/gpt-oss-120b"
+
+# --- Local LLM (LM Studio / Ollama) ---
+# LM Studio:  base_url="http://localhost:1234/v1"
+# Ollama:     base_url="http://localhost:11434/v1"
+client_local = OpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="anything"              # local servers don't need a real key
+)
+local_model = "google/gemma-4-e2b"
+
+# =================================================================
+# TOGGLE — flip to True to use local LLM instead of Groq
+USE_LOCAL_LLM = False
+# =================================================================
+
+
+# =================================================================
+# DOCUMENT READERS
+# =================================================================
+
 import pdfplumber
 from docx import Document
+
 
 def read_pdf(file_path):
     text = ""
@@ -31,6 +57,7 @@ def read_pdf(file_path):
                 text += page_text + "\n"
 
     return text
+
 
 def read_docx(file_path):
     document = Document(file_path)
@@ -49,9 +76,11 @@ def read_docx(file_path):
 
     return text
 
+
 def read_txt(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         return file.read()
+
 
 def read_document(file_path):
     if file_path.suffix.lower() == ".pdf":
@@ -67,9 +96,10 @@ def read_document(file_path):
         print(f"Unsupported file format: {file_path.name}")
 
 
-##=============================================================##
+# =================================================================
+# PYDANTIC MODELS
+# =================================================================
 
-##=======================Resume data analysis ===========================================##
 class CandidateProfile(BaseModel):
     name: str | None = None
     skills: list[str] = Field(default_factory=list)
@@ -78,7 +108,22 @@ class CandidateProfile(BaseModel):
     projects: list[str] = Field(default_factory=list)
     certifications: list[str] = Field(default_factory=list)
 
+
+class RoleRequirements(BaseModel):
+    role_name: str | None = None
+    required_skills: list[str] = Field(default_factory=list)
+    preferred_skills: list[str] = Field(default_factory=list)
+    min_experience: float | None = None
+    responsibilities: list[str] = Field(default_factory=list)
+
+
+# =================================================================
+# LLM EXTRACTION FUNCTIONS
+# =================================================================
+
 resume_schema = CandidateProfile.model_json_schema()
+
+
 def parse_resume(resume_text):
     system_prompt = f"""
 You are a professional resume information extraction assistant.
@@ -107,33 +152,27 @@ Extract the candidate profile from the resume below.
 Return one JSON object matching the schema from the system instructions.
 """
 
-    message_system={
-            "role" : "system",
-            "content" : system_prompt
-        }
-    message_user={
-        "role" : "user",
-        "content" : user_prompt
-        }
-    messages=[message_system, message_user]
-    response_format={"type":"json_object"}
+    message_system = {"role": "system", "content": system_prompt}
+    message_user = {"role": "user", "content": user_prompt}
+    messages = [message_system, message_user]
+    response_format = {"type": "json_object"}
 
-    response=client.chat.completions.create(model=groq_model,messages=messages,response_format=response_format,temperature=0)
-    answer=response.choices[0].message.content
-    raw_json_output=answer #load the raw json ouput from LLM
-    data=json.loads(raw_json_output)
-    resume_data_object=CandidateProfile(**data)
+    # Pick client and model based on toggle
+    client = client_local if USE_LOCAL_LLM else client_groq
+    model = local_model if USE_LOCAL_LLM else groq_model
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        response_format=response_format,
+        temperature=0
+    )
+
+    answer = response.choices[0].message.content
+    raw_json_output = answer  # raw JSON string from LLM
+    data = json.loads(raw_json_output)
+    resume_data_object = CandidateProfile(**data)
     return resume_data_object
-#=================================================================================#
-
-##======================= Job Description data analysis ===============================##
-
-class RoleRequirements(BaseModel):
-    role_name: str | None = None
-    required_skills: list[str] = Field(default_factory=list)
-    preferred_skills: list[str] = Field(default_factory=list)
-    min_experience: float | None = None
-    responsibilities: list[str] = Field(default_factory=list)
 
 
 role_schema = RoleRequirements.model_json_schema()
@@ -171,34 +210,24 @@ Extract the role requirements from the job description below.
 Return one JSON object matching the schema from the system instructions.
 """
 
-    message_system = {
-        "role": "system",
-        "content": system_prompt
-    }
-
-    message_user = {
-        "role": "user",
-        "content": user_prompt
-    }
-
+    message_system = {"role": "system", "content": system_prompt}
+    message_user = {"role": "user", "content": user_prompt}
     messages = [message_system, message_user]
-
     response_format = {"type": "json_object"}
 
+    # Pick client and model based on toggle
+    client = client_local if USE_LOCAL_LLM else client_groq
+    model = local_model if USE_LOCAL_LLM else groq_model
+
     response = client.chat.completions.create(
-        model=groq_model,
+        model=model,
         messages=messages,
         response_format=response_format,
         temperature=0
     )
 
     answer = response.choices[0].message.content
-
     raw_json_output = answer
     data = json.loads(raw_json_output)
-
     role_data_object = RoleRequirements(**data)
-
     return role_data_object
-
-##=====================================================================================##

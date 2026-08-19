@@ -27,7 +27,8 @@ This tool solves that by comparing your skills against a JD and ranking every mi
 ## ✨ Features
 
 - 🖥️ **3 input modes** — resume file, manual skill input, or fully interactive
-- 🤖 **LLM-powered extraction** — handles any resume or JD format via Groq API
+- 🤖 **LLM-powered extraction** — handles any resume or JD format
+- ☁️ **Cloud + Local LLM support** — Groq API (default) or local models via LM Studio / Ollama
 - 🧮 **Rule-based priority ranking** — transparent, explainable logic (not a black box)
 - 📉 **Experience gap detection** — compares candidate experience against role minimum
 - 💾 **JSON report output** — every report saved to `output/` automatically
@@ -40,7 +41,8 @@ This tool solves that by comparing your skills against a JD and ranking every mi
 | Tool | Purpose |
 |---|---|
 | 🐍 Python 3.11+ | Core language |
-| ⚡ Groq API | LLM-powered extraction (free tier) |
+| ⚡ Groq API | Cloud LLM extraction (free tier, default) |
+| 🦙 LM Studio / Ollama | Local LLM extraction (optional, offline) |
 | ✅ Pydantic v2 | Structured output validation |
 | 📄 pdfplumber | Read PDF resumes |
 | 📝 python-docx | Read DOCX resumes |
@@ -55,7 +57,7 @@ This tool solves that by comparing your skills against a JD and ranking every mi
 skill_gap_analyzer/
 ├── src/
 │   ├── main.py          # CLI entry point — orchestrates everything
-│   ├── extractor.py     # Groq LLM calls + Pydantic models
+│   ├── extractor.py     # LLM calls + Pydantic models + dual client setup
 │   ├── analyzer.py      # Gap comparison + priority ranking (no LLM)
 │   └── storage.py       # Save/load reports as JSON
 ├── data/
@@ -77,7 +79,7 @@ skill_gap_analyzer/
 
 **1️⃣ Clone the repo:**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/anikskr13/skill-gap-analyzer.git
 cd skill_gap_analyzer
 ```
 
@@ -114,6 +116,43 @@ uv run python src/main.py --skills "Python, SQL, REST APIs" --jd data/job_descri
 uv run python src/main.py
 ```
 > The tool will prompt you to enter paths or type skills directly.
+
+---
+
+## 🦙 Local LLM Support (Offline Mode)
+
+By default, the tool uses **Groq API** (cloud). But you can switch to a **local LLM** for fully offline, private usage — no API key needed.
+
+### Supported local servers:
+
+| Server | Default URL | Setup |
+|---|---|---|
+| 🖥️ [LM Studio](https://lmstudio.ai/) | `http://localhost:1234/v1` | Download → load a model → start server |
+| 🦙 [Ollama](https://ollama.ai/) | `http://localhost:11434/v1` | `ollama run gemma2` → server starts automatically |
+
+### How to switch:
+
+Open `src/extractor.py` and flip the toggle:
+
+```python
+# =================================================================
+# TOGGLE — flip to True to use local LLM instead of Groq
+USE_LOCAL_LLM = True    # ← change False to True
+# =================================================================
+```
+
+To change the local model or server URL, edit these lines in `extractor.py`:
+
+```python
+# --- Local LLM (LM Studio / Ollama) ---
+client_local = OpenAI(
+    base_url="http://localhost:1234/v1",   # ← change URL for Ollama
+    api_key="anything"
+)
+local_model = "google/gemma-4-e2b"         # ← change to your loaded model
+```
+
+> ⚠️ **Note:** Local LLM quality depends on the model you load. Larger models (7B+) give better extraction results. The tool still works the same way — only the extraction backend changes.
 
 ---
 
@@ -178,7 +217,8 @@ Priority is assigned using **pure Python logic** — no LLM involved:
 
 ## ⚠️ Limitations
 
-- 🌐 Depends on Groq API availability
+- 🌐 Cloud mode depends on Groq API availability
+- 🦙 Local mode quality depends on the model loaded
 - 🔤 Skill matching is exact — no fuzzy matching (e.g. "ML" won't match "Machine Learning")
 - 🖼️ Does not handle image-based / scanned PDFs
 - 🖥️ CLI only — no GUI
@@ -188,15 +228,19 @@ Priority is assigned using **pure Python logic** — no LLM involved:
 
 ## 🔮 Future Improvements
 
-- 🌐 Web UI with Flask or FastAPI
-- 📚 Learning resource links for each missing skill
-- 👥 Batch processing for multiple candidates
-- 🦙 Local LLM support via Ollama (fully offline)
-- 📄 Export report as PDF
-- 🔍 Fuzzy skill matching
+| Improvement | Impact |
+|---|---|
+| 🌐 Web UI with Flask/FastAPI | Accessible without CLI knowledge |
+| 📚 Learning resource suggestions | Auto-link courses to each missing skill |
+| 👥 Batch processing | Analyze multiple candidates against one JD |
+| 📄 PDF report export | Shareable, formatted output beyond JSON |
+| 🔍 Fuzzy skill matching | "ML" ↔ "Machine Learning", "JS" ↔ "JavaScript" |
+| 🔄 CLI flag for LLM toggle | `--local` flag instead of editing code |
 
 ---
 
 ## 👤 Author
 
 **Anik Sarkar** — LearnDepth Track 1 | Project #58
+
+📂 GitHub: [skill-gap-analyzer](https://github.com/anikskr13/skill-gap-analyzer)

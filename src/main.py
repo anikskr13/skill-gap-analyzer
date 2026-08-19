@@ -1,19 +1,34 @@
+# =================================================================
+# IMPORTS AND ENCODING FIX
+# =================================================================
+
 import sys
-sys.stdout.reconfigure(encoding="utf-8")
+sys.stdout.reconfigure(encoding="utf-8")  # fix emoji rendering on Windows
+
 import argparse
 from pathlib import Path
 from extractor import read_document, parse_resume, parse_job_description
-from analyzer import compare,GapReport
+from analyzer import compare, GapReport
 from storage import save_report
+
+
+# =================================================================
+# CLI ARGUMENT PARSER
+# =================================================================
 
 def get_args():
     parser = argparse.ArgumentParser(description="Skill Gap Analyzer")
-    parser.add_argument("--resume", type=str,help="Path to resume file (PDF/DOCX)")
-    parser.add_argument("--skills", type=str,help="comma separated skills")
-    parser.add_argument("--jd", type=str,help="Path to JD file")
+    parser.add_argument("--resume", type=str, help="Path to resume file (PDF/DOCX)")
+    parser.add_argument("--skills", type=str, help="comma separated skills")
+    parser.add_argument("--jd", type=str, help="Path to JD file")
     return parser.parse_args()
 
-def print_report(report:GapReport):
+
+# =================================================================
+# FORMATTED TERMINAL OUTPUT
+# =================================================================
+
+def print_report(report: GapReport):
     print("\n============================================")
     print("         SKILL GAP ANALYSIS REPORT")
     print("============================================")
@@ -32,6 +47,10 @@ def print_report(report:GapReport):
     print(f"Verdict        : {report.verdict}")
     print("============================================\n")
 
+
+# =================================================================
+# MAIN — orchestrates extract → analyze → save → print
+# =================================================================
 
 def main():
     args = get_args()
@@ -75,6 +94,10 @@ def main():
     # --- Print ---
     print_report(report)
 
+
+# =================================================================
+# ENTRY POINT
+# =================================================================
 
 if __name__ == "__main__":
     main()
